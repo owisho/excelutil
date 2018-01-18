@@ -9,6 +9,11 @@ import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.RowRecord;
 import org.apache.poi.hssf.record.SSTRecord;
 
+/**
+ * 解析xls用的事件型
+ * @author owisho
+ *
+ */
 public class EventExample implements HSSFListener{
 
 	private SSTRecord sstrec;

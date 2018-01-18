@@ -9,7 +9,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.junit.Assert;
 
 
 /**
@@ -18,15 +17,33 @@ import org.junit.Assert;
  *
  */
 public class WriteDemo {
+	
+	private static final String fileNameForWindows = "C:\\Users\\owisho\\Desktop\\sxssf.xlsx";
+	
+	@SuppressWarnings("unused")
+	private static final String fileNameForMac = "/Users/wangyang/Desktop/sxssf.xlsx";
 
 	public static void main(String[] args) throws IOException {
 		write();
+		
+//		XSSFWorkbook wb = new XSSFWorkbook();
+//		XSSFSheet sheet = wb.createSheet();
+//		Row row = sheet.createRow(0);
+//		Cell cell = row.createCell(0);
+//		cell.setCellValue("1");
+//		XSSFSheet sheet2 = wb.createSheet();
+//		Row row2 = sheet2.createRow(0);
+//		Cell cell2 = row2.createCell(0);
+//		cell2.setCellValue("1");
+//		OutputStream os = new FileOutputStream(fileNameForWindows);
+//		wb.write(os);
+//		wb.close();
 	}
 	
 	public static void write() throws IOException{
 		SXSSFWorkbook wb = new SXSSFWorkbook(100);
-		Sheet sh = wb.createSheet();
-		for(int rownum=0;rownum<1000;rownum++) {
+		Sheet sh = wb.createSheet("sheet");
+		for(int rownum=0;rownum<10000;rownum++) {
 			Row row = sh.createRow(rownum);
 			for(int cellnum = 0;cellnum<10;cellnum++) {
 				Cell cell = row.createCell(cellnum);
@@ -35,15 +52,15 @@ public class WriteDemo {
 			}
 		}
 		//Rows with rownum < 900 are flushed and not accessible
-		for(int rownum= 0;rownum<900;rownum++) {
-			Assert.assertNull(sh.getRow(rownum));
-		}
+//		for(int rownum= 0;rownum<900;rownum++) {
+//			Assert.assertNull(sh.getRow(rownum));
+//		}
 		//ther last 100 rows are still in memory 
-		for(int rownum=900;rownum<1000;rownum++) {
-			Assert.assertNotNull(sh.getRow(rownum));
-		}
+//		for(int rownum=900;rownum<1000;rownum++) {
+//			Assert.assertNotNull(sh.getRow(rownum));
+//		}
 		
-		FileOutputStream out = new FileOutputStream("/Users/wangyang/Desktop/sxssf.xlxs");
+		FileOutputStream out = new FileOutputStream(fileNameForWindows);
 		wb.write(out);
 		out.close();
 		wb.dispose();
@@ -68,7 +85,7 @@ public class WriteDemo {
 			}
 		}
 		
-		FileOutputStream out = new FileOutputStream("/Users/wangyang/Desktop/sxssf.xlxs");
+		FileOutputStream out = new FileOutputStream(fileNameForWindows);
 		wb.write(out);
 		out.close();
 		//dispose of temporary files backing this workbook on disk
