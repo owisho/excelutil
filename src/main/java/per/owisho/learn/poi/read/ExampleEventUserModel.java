@@ -58,7 +58,6 @@ public class ExampleEventUserModel {
 		ContentHandler handler = new CommonSheetDataHandler(sst);
 		parser.setContentHandler(handler);
 		return parser;
-		
 	}
 	
 	/**

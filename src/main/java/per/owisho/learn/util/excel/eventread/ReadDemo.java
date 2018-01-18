@@ -1,17 +1,20 @@
-package per.owisho.learn.poi.read;
+package per.owisho.learn.util.excel.eventread;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
+import per.owisho.learn.poi.read.EventExample;
+
 public class ReadDemo {
 
 	public static void main(String[] args) throws Exception {
-		System.out.println(args[0]);
+//		System.out.println(args[0]);
 		readForXLXS(args[0], 1);
 	}
 
@@ -49,9 +52,22 @@ public class ReadDemo {
 	}
 
 	public static void readForXLXS(String fileName,Integer sheetIndex) throws Exception {
-		ExampleEventUserModel example = new ExampleEventUserModel();
-		example.processOneSheet(fileName, sheetIndex);
-//		example.processAllSheets(fileName);
+		ArrayList<String> titles = new ArrayList<String>(5);
+		titles.add("标题1");
+		titles.add("标题2");
+		titles.add("标题3");
+		titles.add("标题4");
+		titles.add("标题5");
+		
+		ArrayList<String> attributes = new ArrayList<String>(5);
+		attributes.add("attributes1");
+		attributes.add("attributes2");
+		attributes.add("attributes3");
+		attributes.add("attributes4");
+		attributes.add("attributes5");
+		DemoBSDataHandler demoHandler = new DemoBSDataHandler(titles,attributes);
+		EventReader reader = new EventReader(10,demoHandler);
+		reader.processOneSheet(fileName, sheetIndex);
 	}
 	
 }
