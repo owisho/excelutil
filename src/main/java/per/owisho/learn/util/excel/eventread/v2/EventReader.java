@@ -1,5 +1,6 @@
-package per.owisho.learn.util.excel.eventread;
+package per.owisho.learn.util.excel.eventread.v2;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Iterator;
 
@@ -15,8 +16,10 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /**
  * excel 事件方式读取类，参考poi官网教程示例代码
  * 
+ * 增加输入参数为流的方法
+ * 
  * @author owisho
- * @version 1.0
+ * @version 2.0
  * @date 2018年1月19日
  */
 public class EventReader {
@@ -31,18 +34,32 @@ public class EventReader {
 		this.capacity = capacity;
 		this.bsDataHandler = bsDataHandler;
 	}
-
+	
+	
 	/**
 	 * 解析单个excel sheet页
 	 * 
 	 * @param fileName
-	 *            文件名
+	 *            文件名称
 	 * @param sheetIndex
 	 *            表单页的序号，通常情况下表单页的序号从1开始
 	 * @throws Exception
 	 */
-	public void processOneSheet(String fileName, Integer sheetIndex) throws Exception {
-		OPCPackage pkg = OPCPackage.open(fileName);
+	public void processOneSheet(String fileName,Integer sheetIndex) throws Exception{
+		processOneSheet(new FileInputStream(fileName),sheetIndex);
+	}
+	
+	/**
+	 * 解析单个excel sheet页
+	 * 
+	 * @param fin
+	 *            文件输入流
+	 * @param sheetIndex
+	 *            表单页的序号，通常情况下表单页的序号从1开始
+	 * @throws Exception
+	 */
+	public void processOneSheet(InputStream fin, Integer sheetIndex) throws Exception {
+		OPCPackage pkg = OPCPackage.open(fin);
 		XSSFReader r = new XSSFReader(pkg);
 		SharedStringsTable sst = r.getSharedStringsTable();
 
