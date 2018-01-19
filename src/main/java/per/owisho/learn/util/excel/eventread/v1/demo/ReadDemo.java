@@ -15,8 +15,7 @@ import per.owisho.learn.util.excel.eventread.v1.EventReader;
 public class ReadDemo {
 
 	public static void main(String[] args) throws Exception {
-//		System.out.println(args[0]);
-		readForXLXS(args[0], 1);
+		readForXLXS("/Users/wangyang/Desktop/ceshiwenjian.xlsx", 1);
 	}
 
 	/**
