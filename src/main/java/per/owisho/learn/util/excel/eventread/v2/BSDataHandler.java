@@ -1,6 +1,6 @@
 package per.owisho.learn.util.excel.eventread.v2;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 业务数据处理接口
@@ -17,6 +17,6 @@ public interface BSDataHandler {
 	 * @param datas
 	 */
 	@SuppressWarnings("rawtypes")
-	void process(List[] datas);
+	void process(ArrayList[] datas);
 	
 }

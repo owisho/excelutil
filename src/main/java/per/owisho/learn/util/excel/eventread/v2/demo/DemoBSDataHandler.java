@@ -26,7 +26,7 @@ public class DemoBSDataHandler implements BSDataHandler{
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public void process(List[] datas) {
+	public void process(ArrayList[] datas) {
 		if(null!=datas&&datas.length>0) {
 			for(List data:datas) {
 				if(data==null)

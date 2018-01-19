@@ -56,7 +56,7 @@ public class SheetDataPraser extends DefaultHandler {
 	public SheetDataPraser(SharedStringsTable sst,int capacity) {
 		this(sst, capacity, new BSDataHandler() {
 			@Override
-			public void process(List[] datas) {
+			public void process(ArrayList[] datas) {
 				for (List list : datas) {
 					if (list == null)
 						continue;
