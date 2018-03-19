@@ -1,11 +1,11 @@
-package per.owisho.learn.util.excel.write.vo;
+package per.owisho.learn.util.excel.write.v1.vo;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 
-import per.owisho.learn.util.excel.write.ContentResolver;
+import per.owisho.learn.util.excel.write.v1.ContentResolver;
 
 /**
  * ExcelRowVO辅助类 @see ExcelRowVO
