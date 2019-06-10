@@ -1,9 +1,5 @@
 package per.owisho.learn.util.excel.eventread.v2;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Iterator;
-
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.model.SharedStringsTable;
@@ -13,13 +9,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Iterator;
+
 /**
  * excel 事件方式读取类，参考poi官网教程示例代码
  * 
- * 增加输入参数为流的方法
- * 
  * @author owisho
- * @version 2.0
+ * @version 1.0
  * @date 2018年1月19日
  */
 public class EventReader {
@@ -34,24 +32,23 @@ public class EventReader {
 		this.capacity = capacity;
 		this.bsDataHandler = bsDataHandler;
 	}
-	
-	
+
 	/**
 	 * 解析单个excel sheet页
-	 * 
+	 *
 	 * @param fileName
 	 *            文件名称
 	 * @param sheetIndex
 	 *            表单页的序号，通常情况下表单页的序号从1开始
 	 * @throws Exception
 	 */
-	public void processOneSheet(String fileName,Integer sheetIndex) throws Exception{
-		processOneSheet(new FileInputStream(fileName),sheetIndex);
+	public void processOneSheet(String fileName, Integer sheetIndex) throws Exception {
+		processOneSheet(new FileInputStream(fileName), sheetIndex);
 	}
-	
+
 	/**
 	 * 解析单个excel sheet页
-	 * 
+	 *
 	 * @param fin
 	 *            文件输入流
 	 * @param sheetIndex
@@ -61,6 +58,7 @@ public class EventReader {
 	public void processOneSheet(InputStream fin, Integer sheetIndex) throws Exception {
 		OPCPackage pkg = OPCPackage.open(fin);
 		XSSFReader r = new XSSFReader(pkg);
+
 		SharedStringsTable sst = r.getSharedStringsTable();
 
 		XMLReader parser = fetchSheetParser(sst);
@@ -72,8 +70,41 @@ public class EventReader {
 	}
 
 	/**
+	 * 解析单个excel sheet页
+	 *
+	 * @param fin
+	 *            文件输入流
+	 * @param sheetName
+	 *            表单页名称
+	 * @throws Exception
+	 */
+	public void processOneSheet(InputStream fin, String sheetName) throws Exception {
+		OPCPackage pkg = OPCPackage.open(fin);
+		XSSFReader r = new XSSFReader(pkg);
+
+		SharedStringsTable sst = r.getSharedStringsTable();
+
+		XMLReader parser = fetchSheetParser(sst);
+
+		// TODO 待验证是否是会占用较大内存
+		XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator) r.getSheetsData();
+		InputStream sheet = null;
+		while (iter.hasNext()) {
+			sheet = iter.next();
+			String sheetNameTemp = iter.getSheetName();
+			if (sheetNameTemp.equals(sheetName)) {
+				break;
+			}
+		}
+
+		InputSource sheetSource = new InputSource(sheet);
+		parser.parse(sheetSource);
+		sheet.close();
+	}
+
+	/**
 	 * 解析整个excel文件（handler的处理方式没有完全想好，不推荐使用）
-	 * 
+	 *
 	 * @param fileName
 	 *            excel 文件名
 	 * @throws Exception

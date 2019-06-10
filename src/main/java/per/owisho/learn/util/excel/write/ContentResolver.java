@@ -1,12 +1,11 @@
-package per.owisho.learn.util.excel.write.v2;
+package per.owisho.learn.util.excel.write;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-
-import org.apache.poi.ss.usermodel.IndexedColors;
 
 /**
  * excel单元格内容处理器 为了支持在excel单元格中画图片
@@ -23,7 +22,7 @@ public interface ContentResolver {
 	 * @param content
 	 * @return
 	 */
-	void resolve(HSSFCell cell, Object content);
+	void resolve(Cell cell, Object content);
 
 	default CellStyle getContentStyle(Workbook wb) {
 		CellStyle cellStyle = wb.createCellStyle();
@@ -35,6 +34,8 @@ public interface ContentResolver {
 		cellStyle.setBorderLeft(XSSFCellStyle.BORDER_THIN);
 		cellStyle.setBorderRight(XSSFCellStyle.BORDER_THIN);
 		cellStyle.setBorderTop(XSSFCellStyle.BORDER_THIN);
+		cellStyle.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+		cellStyle.setAlignment(XSSFCellStyle.VERTICAL_BOTTOM );
 		return cellStyle;
 	}
 

@@ -1,36 +1,29 @@
-package per.owisho.learn.util.excel.write.v2;
+package per.owisho.learn.util.excel.write;
+
+import lombok.extern.log4j.Log4j2;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
+import org.apache.poi.xssf.streaming.SXSSFCell;
+import org.apache.poi.xssf.streaming.SXSSFRow;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import per.owisho.learn.util.excel.write.vo.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-
-import per.owisho.learn.util.excel.write.v2.vo.ExcelCellVO;
-import per.owisho.learn.util.excel.write.v2.vo.ExcelRowVO;
-import per.owisho.learn.util.excel.write.v2.vo.ExcelVO;
-import per.owisho.learn.util.excel.write.v2.vo.SheetContentVO;
-import per.owisho.learn.util.excel.write.v2.vo.SheetTitleVO;
-import per.owisho.learn.util.excel.write.v2.vo.SheetVO;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * 导出工具类
- * 
+ *
  * @author wangyang
  * @version 1.0
  * @date 2018年01月12日
  */
+@Log4j2
 public class ExportUtil {
 
 	/**
@@ -38,7 +31,11 @@ public class ExportUtil {
 	 * 行号
 	 */
 	private int dataIndex = 1;
-	
+
+	private int flushCacheSize = 30;
+
+	private int dealnum = 0;
+
 	/**
 	 * 使用实体数据，定位数据，excel名称，表单名称，标题栏数据解析器，内容数据解析器构造要导出的数据的数据格式
 	 * @param excelName excel名称
@@ -51,25 +48,26 @@ public class ExportUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public ExcelVO constructData(String excelName,String sheetName,List<Object> datas,LinkedHashMap<String,String> cellLocation,
-			ArrayList<ContentResolver> titleResolver,ArrayList<ContentResolver> contentResolver,boolean addIndex) throws Exception {
+	public ExcelVO constructData(String excelName, String sheetName, List<?> datas, LinkedHashMap<String,String> cellLocation,
+								 ArrayList<ContentResolver> titleResolver, ArrayList<ContentResolver> contentResolver, boolean addIndex) throws Exception {
+		long start = System.currentTimeMillis();
 		assert cellLocation!=null:"定位信息不能为空";
 		if(titleResolver!=null)
 			assert cellLocation.size()==titleResolver.size():"标题栏处理器数量不正确";
 		if(contentResolver!=null)
 			assert cellLocation.size()==contentResolver.size():"内容处理数量不正确";
-		
+
 		ArrayList<String> titles = new ArrayList<String>(cellLocation.size());
 		ArrayList<String> locations = new ArrayList<String>(cellLocation.size());
 		cellLocation.forEach((key,value)->{
 			titles.add(key);
 			locations.add(value);
 		});
-		
-		ContentResolver defaultResolver = DefaultResolverEnum.Title.getResolver();
-		
+
+		ContentResolver defaultResolver = DefaultResolver.getTitleResolver();
+
 		ArrayList<ExcelCellVO> cells = new ArrayList<ExcelCellVO>();
-		
+
 		if(addIndex) {
 			ExcelCellVO cell = new ExcelCellVO("序号",defaultResolver);
 			cells.add(cell);
@@ -82,7 +80,7 @@ public class ExportUtil {
 		}
 		ExcelRowVO titleRow = new ExcelRowVO(cells);
 		SheetTitleVO sheetTitleVO = new SheetTitleVO(Arrays.asList(titleRow));
-		
+
 		ArrayList<ExcelRowVO> rows = new ArrayList<ExcelRowVO>();
 		if(null!=datas&&!datas.isEmpty()) {
 			for(Object o:datas) {
@@ -91,15 +89,16 @@ public class ExportUtil {
 			}
 		}
 		SheetContentVO sheetContentVO = new SheetContentVO(rows);
-		
+
 		SheetVO sheetVO = new SheetVO(sheetName, sheetTitleVO, sheetContentVO);
-		
+
 		ExcelVO excel = new ExcelVO(excelName, Arrays.asList(sheetVO));
-		
+
+		System.out.println("ExportUtil.constructData"+(System.currentTimeMillis()-start));
 		return excel;
-		
+
 	}
-	
+
 	/**
 	 * 将实体数据转化成Excel行数据，本方法没有各种校验
 	 * 认为调用方法前内容已经做了相关验证
@@ -114,9 +113,9 @@ public class ExportUtil {
 	 * @throws IllegalAccessException
 	 */
 	private ExcelRowVO dataToRow(ArrayList<String> locations,ArrayList<ContentResolver> contentResolvers,Object data,boolean addIndex) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-		
-		ContentResolver defaultResolver = DefaultResolverEnum.Content.getResolver();
-		
+
+		ContentResolver defaultResolver = DefaultResolver.getContentResolver();
+
 		ArrayList<ExcelCellVO> cells = new ArrayList<ExcelCellVO>();
 		Class<?> cls = data.getClass();
 		if(addIndex) {
@@ -124,7 +123,7 @@ public class ExportUtil {
 			cells.add(cell);
 		}
 		for (int i = 0; i < locations.size(); i++) {
-			
+
 			String location = locations.get(i);
 			Field field = cls.getDeclaredField(location);
 			field.setAccessible(true);
@@ -137,23 +136,23 @@ public class ExportUtil {
 		ExcelRowVO row = new ExcelRowVO(cells);
 		return row;
 	}
-	
+
 	/**
 	 * 导出数据方法，os需要调用方法自行处理（关闭和创建）
 	 * @param os
 	 * @param vo
 	 * @throws Exception
 	 */
-	public void export(OutputStream os, ExcelVO vo) throws Exception {
-
-		HSSFWorkbook wb = new HSSFWorkbook();
+	public void export(OutputStream os, ExcelVO vo,Long taskId) throws Exception {
+		long start = System.currentTimeMillis();
+		SXSSFWorkbook wb = new SXSSFWorkbook(null,200,true,false);
 		try {
 			List<SheetVO> sheets = vo.getSheets();
 			if (sheets == null || sheets.isEmpty())
 				throw new Exception("要导出的excel无内容");
 			for (int i = 0; i < sheets.size(); i++) {
 				SheetVO sheet = sheets.get(i);
-				HSSFSheet sh = wb.createSheet(sheet.getSheetName() == null ? "sheet" + i : sheet.getSheetName());
+				SXSSFSheet sh = wb.createSheet(sheet.getSheetName() == null ? "sheet" + i : sheet.getSheetName());
 
 				// 行号
 				int rowIndex = 0;
@@ -162,7 +161,7 @@ public class ExportUtil {
 				int cols = -1;
 				if (title != null && title.getRows() != null && !title.getRows().isEmpty()) {
 					List<ExcelRowVO> rows = title.getRows();
-					rowIndex = addSheetRows(sh, rows, rowIndex);
+					rowIndex = addSheetRows(sh, rows, rowIndex,taskId);
 					//使用最大标题的列的大小定义整个sheet页的列数
 					for(ExcelRowVO rowVO :rows) {
 						if(rowVO.getCells().size()>cols) {
@@ -174,88 +173,141 @@ public class ExportUtil {
 				SheetContentVO content = sheet.getContent();
 				if (content != null && content.getRows() != null && !content.getRows().isEmpty()) {
 					List<ExcelRowVO> rows = content.getRows();
-					rowIndex = addSheetRows(sh, rows, rowIndex);
+
+					if(rows==null||rows.isEmpty())
+						continue;
+
+					//数据量小的时候单线程执行
+//					if(rows.size()<1000){
+					rowIndex = addSheetRows(sh, rows, rowIndex,taskId);
+//					}
+					//如果数据条数多余10000条
+					/*
+					else{
+						int threadNum = 8;
+						ThreadPoolCommon pool = new ThreadPoolCommon(threadNum);
+						CountDownLatch doneSignal = new CountDownLatch(threadNum);
+						int minSize = rows.size()/threadNum;
+						for(int j=0;j<(threadNum-1);j++){
+							List<ExcelRowVO> subRows = new ArrayList<>();
+							for(int k=j*minSize;k<(j+1)*minSize;k++){
+								subRows.add(rows.get(k));
+							}
+							pool.execute(new addSheetRowsTask(sh,subRows,j*minSize+rowIndex,doneSignal));
+						}
+						List<ExcelRowVO> subRows = new ArrayList<>();
+						for(int j=(threadNum-1)*minSize;j<rows.size();j++){
+							subRows.add(rows.get(j));
+						}
+						pool.execute(new addSheetRowsTask(sh,subRows,(threadNum-1)*minSize+rowIndex,doneSignal));
+						doneSignal.await();
+						pool.shutdown();
+					}
+					*/
 					//如果没有标题行
 					if(cols==-1) {
 						cols = rows.get(0).getCells().size();
 					}
+
 				}
-				
-				//自动调整列宽待修改
-				for(int j=0;j<cols;j++) {
-					sh.autoSizeColumn(j);
-				}
-				
+
+//				for(int num=0;num<cols;num++){
+//					sh.trackAllColumnsForAutoSizing();
+//					sh.autoSizeColumn(num);
+//				}
+
 			}
+			//TODO 导出图片时excel可能会显示有点问题
+			ZipSecureFile.setMinInflateRatio(0.005);
 			wb.write(os);
 		} finally {
 			wb.close();
+			System.out.println("ExportUtil.export"+(System.currentTimeMillis()-start));
 		}
 	}
 
-	private Integer addSheetRows(HSSFSheet sh, List<ExcelRowVO> rows, Integer rowIndex) {
+	private class addSheetRowsTask implements Runnable{
+		private SXSSFSheet sh ;
+		private List<ExcelRowVO> rows;
+		private int rowIndex;
+		private CountDownLatch doneSignal;
+		private long taskId;
+		addSheetRowsTask(SXSSFSheet sh, List<ExcelRowVO> rows, int rowIndex,CountDownLatch doneSignal,Long taskId){
+			this.sh = sh;
+			this.rows = rows;
+			this.rowIndex = rowIndex;
+			this.doneSignal = doneSignal;
+			this.taskId = taskId;
+		}
+
+		@Override
+		public void run() {
+			try{
+				addSheetRows(sh,rows,rowIndex,taskId);
+			}catch (Exception e){
+                log.error(e.getMessage(),e);
+			}finally {
+				doneSignal.countDown();
+			}
+		}
+	}
+
+	private Integer addSheetRows(SXSSFSheet sh, List<ExcelRowVO> rows, int rowIndex,Long taskId) {
+
+		//如果无数据直接返回
+		if(rows==null||rows.isEmpty())
+			return rowIndex;
+
 		if (rows != null && !rows.isEmpty()) {
 			for (ExcelRowVO row : rows) {
-				HSSFRow r = sh.createRow(rowIndex++);
+				SXSSFRow r = sh.createRow(rowIndex++);
 				int cellIndex = 0;
 				List<ExcelCellVO> cells = row.getCells();
 				if (null != cells && !cells.isEmpty()) {
 					for (ExcelCellVO cell : cells) {
-						HSSFCell c = r.createCell(cellIndex++);
+						SXSSFCell c = r.createCell(cellIndex++);
 						cell.drawCell(c);
+					}
+				}
+				if(sh.getPhysicalNumberOfRows()%flushCacheSize==0){
+					try {
+						System.out.println("将数据全部刷新到硬盘");
+						sh.flushRows();
+						System.out.println("冲刷数据结束");
+					} catch (IOException e) {
+                        log.error(e.getMessage(),e);
 					}
 				}
 			}
 		}
-		return rowIndex;
+		//TODO 数据全部处理完，冲刷数据
+        try {
+            sh.flushRows();
+        } catch (IOException e) {
+            log.error(e.getMessage(),e);
+        }
+        return rowIndex;
 	}
 
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) {
+	    int rownum = 1000;
+	    try{
+	        rownum = Integer.parseInt(args[0]);
+        }catch (Exception e){
+            log.error(e.getMessage(),e);
+        }
+		test2(rownum);
+	}
 
-//		test1();
-		test2();
-		
-	}
-	
-	@SuppressWarnings("unused")
-	private static void test1() throws FileNotFoundException {
-		ExcelCellVO cell = new ExcelCellVO("1", null);
-		List<ExcelCellVO> cells = new ArrayList<ExcelCellVO>();
-		for (int i = 0; i < 5; i++) {
-			cells.add(cell);
-		}
-		ExcelRowVO row = new ExcelRowVO(cells);
-		List<ExcelRowVO> rows = new ArrayList<ExcelRowVO>();
-		for (int i = 0; i < 10; i++) {
-			rows.add(row);
-		}
-		SheetContentVO content = new SheetContentVO(rows);
-		SheetVO sheet = new SheetVO("test", null, content);
-		ExcelVO excel = new ExcelVO("ceshi", Arrays.asList(sheet));
-		FileOutputStream os = new FileOutputStream("/usr/local/myImage/image/" + excel.getExcelName() + ".xls");
-		ExportUtil util = new ExportUtil();
-		try {
-			util.export(os, excel);
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				os.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private static void test2() {
-		
+	private static void test2(int rownum) {
+
 		List<Object> arrayList = new ArrayList<Object>();
 		DemoBean bean = new DemoBean();
 		bean.setDate(new Date());
 		bean.setEmail("owisho@126.com");
 		bean.setName("owisho");
-		bean.setFile(new File("C:\\Users\\owisho\\Desktop\\工作任务\\20180305\\file\\1.jpg"));
-		for(int i=0;i<5;i++) {
+		bean.setFile(new File("/mnt/data/wy/1.jpg"));
+		for(int i=0;i<rownum;i++) {
 			arrayList.add(bean);
 		}
 		LinkedHashMap<String, String> map = new LinkedHashMap<>();
@@ -263,44 +315,45 @@ public class ExportUtil {
 		map.put("邮箱","email");
 		map.put("日期","date");
 		map.put("图片","file");
-		
+
 		ArrayList<ContentResolver> contentResolvers = new ArrayList<>();
 		contentResolvers.add(null);
 		contentResolvers.add(null);
 		contentResolvers.add(null);
 		contentResolvers.add(new PicContentResolver());
-		
+
 		ExportUtil util = new ExportUtil();
 		try {
 			ExcelVO vo = util.constructData("test", "ceshi", arrayList, map, null, contentResolvers,true);
-			FileOutputStream os = new FileOutputStream("D:\\import\\tmp\\" + vo.getExcelName() + ".xls");
+			FileOutputStream os = new FileOutputStream("/mnt/data/wy" + vo.getExcelName() + ".xlsx");
 			try {
-				util.export(os, vo);
+				util.export(os, vo,null);
 			} catch (Exception e) {
-				e.printStackTrace();
+                log.error(e.getMessage(),e);
 			} finally {
 				try {
 					os.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+                    log.error(e.getMessage(),e);
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+            log.error(e.getMessage(),e);
 		}
-			
+
 	}
+
 
 }
 
 class DemoBean {
-	
+
 	private Integer id ;
-	
+
 	private String name;
-	
+
 	private String email;
-	
+
 	private Date date;
 
 	private File file;
@@ -344,5 +397,6 @@ class DemoBean {
 	public void setFile(File file) {
 		this.file = file;
 	}
-	
+
 }
+

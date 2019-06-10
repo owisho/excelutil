@@ -40,6 +40,11 @@
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
 		</dependency>
+		<dependency>
+			<groupId>per.owisho.learn</groupId>
+			<artifactId>util</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 </project>

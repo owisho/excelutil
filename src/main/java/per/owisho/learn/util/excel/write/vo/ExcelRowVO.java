@@ -1,4 +1,4 @@
-package per.owisho.learn.util.excel.write.v1.vo;
+package per.owisho.learn.util.excel.write.vo;
 
 import java.util.List;
 

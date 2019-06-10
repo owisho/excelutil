@@ -1,4 +1,4 @@
-package per.owisho.learn.util.excel.write.v2.vo;
+package per.owisho.learn.util.excel.write.vo;
 
 /**
  * ExcelVO辅助类，为了存放excel表单中相关信息存在
